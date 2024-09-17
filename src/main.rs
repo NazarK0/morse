@@ -34,7 +34,8 @@ fn parse_cmd_args(args: Vec<String>) {
         if arg.starts_with("--help") {
             println!("Show help")
         } else if arg.starts_with("--version") {
-            println!("Show version")
+            version();
+            return;
         } else {
             if arg.starts_with("-l") || arg.starts_with("--language") {
                 println!("You specify language")
@@ -75,4 +76,19 @@ fn parse_cmd_args(args: Vec<String>) {
     if !input_set {
         input_error("missing input data");
     }
+}
+
+fn version() {
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+    let version_msg: String = format!(
+        "morse {VERSION}
+Copyright (C) 2024 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Written by Nazar Vanivskyi\n"
+    );
+    print!("{version_msg}");
 }
