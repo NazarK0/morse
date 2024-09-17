@@ -23,8 +23,17 @@ fn input_error(message: &str) {
     println!("Try 'morse --help' for more information.");
 }
 
+fn missing_delimeter(flag: &str) {
+    input_error(&format!("Missing {flag}'=' operand"))
+}
+
+
+
 fn parse_cmd_args(args: Vec<String>) {
+    const MISSING_EQ_MSG: &str = "Missing '=' operand";
     let mut input_set = false;
+    let mut text: String;
+
     if args.len() == 1 {
         input_error("missing operands");
         return;
@@ -61,13 +70,32 @@ fn parse_cmd_args(args: Vec<String>) {
             }
 
             if arg.starts_with("-t") || arg.starts_with("--translate") {
+                
+
                 if input_set {
                     println!(
                         "Redundant operand. You specify input from file and from command line."
                     )
                 } else {
                     input_set = true;
-                    println!("You specify input from command line")
+                    let flag;
+
+                    
+
+                    if arg.starts_with("-t"){
+                        flag = "-t";
+
+                    } else {
+                        flag = "--translate";
+                    }
+
+                    if !arg.contains("=") {
+                        missing_delimeter(flag);
+                        return;
+                    }
+                    
+                    text = extract_data_from_arg(arg, flag);
+                    println!("You specify input from command line: {text}")
                 }
             }
         }
@@ -91,4 +119,12 @@ There is NO WARRANTY, to the extent permitted by law.
 Written by Nazar Vanivskyi\n"
     );
     print!("{version_msg}");
+}
+
+fn extract_data_from_arg(arg: &str, flag: &str) -> String {
+    arg.replace(&format!("{flag}="), "")
+}
+
+fn translate (text: &str) {
+    // TODO
 }
