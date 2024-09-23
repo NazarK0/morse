@@ -3,8 +3,8 @@ pub fn input_error(message: &str) {
     println!("Try 'morse --help' for more information.");
 }
 
-pub fn missing_delimeter(flag: &str) {
-    input_error(&format!("Missing {flag}'=' operand"))
+pub fn missing_delimeter(arg: &str) {
+    input_error(&format!("Missing {arg}'=' operand"))
 }
 
 pub fn version() {

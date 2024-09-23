@@ -1,4 +1,4 @@
-use morse::{input_error, missing_delimeter, run, version, Config, ConfigError};
+use morse::{argument_parser::ArgError, input_error, missing_delimeter, run, version, Config};
 use std::{env, process};
 
 // Usage morse [OPTION] [DATA]
@@ -30,9 +30,14 @@ fn main() {
 
     let config = Config::build(&args).unwrap_or_else(|err| {
         match err {
-            ConfigError::MissingDelimeterFlag(flag) => missing_delimeter(&flag),
-            ConfigError::MissingOperands => input_error("Missing operands"),
-            ConfigError::MissingInputData => input_error("Missing input data"),
+            ArgError::MissingDelimeter(arg) => missing_delimeter(&arg),
+            ArgError::MissingOperands => input_error("Missing operands"),
+            ArgError::MissingInputData(arg) => {
+                input_error(&format!("Arg '{arg }' missing input data"))
+            }
+            ArgError::InvalidArg(arg) => input_error(&format!("Invalid arg '{arg}'")),
+            ArgError::RedundantArg(arg) => input_error(&format!("Redundant arg '{arg}'")),
+            ArgError::UnsupportedLanguage(lang) => input_error(&format!("Unsupported language '{lang}'")),
         }
 
         process::exit(1);

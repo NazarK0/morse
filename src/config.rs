@@ -1,9 +1,4 @@
-mod config_error;
-use std::{collections::HashSet, process};
-
-pub use config_error::ConfigError;
-
-const DELIMETERS_IN_ARG_FLAG: [char; 2] = ['=', ' '];
+use crate::argument_parser::{parse_arg, ArgError, ConfigField};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Alphabet {
@@ -12,6 +7,7 @@ pub enum Alphabet {
     English,
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct Config {
     language: Alphabet,
     beep: bool,
@@ -20,117 +16,49 @@ pub struct Config {
     output_file_path: Option<String>,
 }
 
-struct ParsedArg {
-    field: ConfigField,
-    flag: String,
-    data: Option<String>,
-}
-
-#[derive(Debug, PartialEq, Copy, Clone)]
-enum ConfigField {
-    Language,
-    Beep,
-    InputFilePath,
-    Text,
-    OutputFilePath,
-}
-
 impl Config {
-    pub fn build(args: &[String]) -> Result<Config, ConfigError> {
-        let mut input_set = false;
-        let text: Option<String> = None;
+    pub fn build(args: &[String]) -> Result<Config, ArgError> {
+        let mut language = Alphabet::International;
+        let mut beep = false;
+        let mut input_file_path = None;
+        let mut text = None;
+        let mut output_file_path = None;
 
-        let valid_flags = HashSet::from([
-            "-l",
-            "--language",
-            "-o",
-            "--output-file",
-            "-t",
-            "--text",
-            "-i",
-            "--input-file",
-            "-b",
-            "--beep",
-        ]);
+        let mut input_set = false;
 
         if args.len() == 1 {
-            return Err(ConfigError::MissingOperands);
+            return Err(ArgError::MissingOperands);
         }
 
         for arg in &args[1..] {
-            let parsed_arg = Self::extract_data_from_arg(arg);
+            let parsed_arg = parse_arg(arg)?;
 
-            match parsed_arg {
-                Some(parsed) => {
-                    println!("Valid flag {}", parsed.flag);
-                }
-                None => {
-                    println!("Invalid flag");
-                }
-            }
-
-            if arg.starts_with("-l") || arg.starts_with("--language") {
-                println!("You specify language")
-            }
-
-            if arg.starts_with("-o") || arg.starts_with("--output-file") {
-                println!("You specify output to file")
-            }
-
-            if arg.starts_with("-i") || arg.starts_with("--input-file") {
-                if input_set {
-                    println!(
-                        "Redundant operand. You specify input from file and from command line."
-                    )
-                } else {
-                    input_set = true;
-
-                    //  if arg.starts_with("-i") {
-                    //     flag = "-i";
-                    // } else {
-                    //     flag = "--input-file";
-                    // }
-                }
-            }
-
-            if arg.starts_with("-b") || arg.starts_with("--beep") {
-                println!("You specify emit Morse code beep")
-            }
-
-            if arg.starts_with("-t") || arg.starts_with("--translate") {
-                if input_set {
-                    println!(
-                        "Redundant operand. You specify input from file and from command line."
-                    )
-                } else {
-                    input_set = true;
-                    let flag;
-
-                    if arg.starts_with("-t") {
-                        flag = "-t";
-                    } else {
-                        flag = "--translate";
+            match parsed_arg.field {
+                ConfigField::Language(lang) => language = lang,
+                ConfigField::Beep => beep = true,
+                ConfigField::InputFilePath(path) => {
+                    if input_set {
+                        return Err(ArgError::RedundantArg(parsed_arg.arg));
                     }
-
-                    if !arg.contains("=") {
-                        return Err(ConfigError::MissingDelimeterFlag(String::from(flag)));
-                    }
-
-                    Self::extract_data_from_arg(arg);
-                    // println!("You specify input from command line: {text}")
+                    input_set = true;
+                    input_file_path = Some(path)
                 }
+                ConfigField::Text(txt) => {
+                    if input_set {
+                        return Err(ArgError::RedundantArg(parsed_arg.arg));
+                    }
+                    input_set = true;
+                    text = Some(txt)
+                }
+                ConfigField::OutputFilePath(path) => output_file_path = Some(path),
             }
-        }
-
-        if !input_set {
-            return Err(ConfigError::MissingInputData);
         }
 
         Ok(Config {
-            language: Alphabet::International,
-            beep: true,
-            input_file_path: None,
-            output_file_path: None,
+            language,
+            beep,
+            input_file_path,
+            output_file_path,
             text,
         })
     }
@@ -157,38 +85,6 @@ impl Config {
     }
 
     // private methods
-    fn extract_data_from_arg(arg: &str) -> Option<ParsedArg> {
-        let arg_split: Vec<&str> = arg.split(&DELIMETERS_IN_ARG_FLAG).collect();
-        // println!("{:?}", arg_split);
-
-        let field = match arg_split[0] {
-            "-l" | "--text" => Some(ConfigField::Text),
-            "-o" | "--output-file" => Some(ConfigField::OutputFilePath),
-            "-t" | "--text" => Some(ConfigField::Text),
-            "-i" | "--input-file" => Some(ConfigField::InputFilePath),
-            "-b" | "--beep" => Some(ConfigField::Beep),
-            _ => None,
-        };
-
-        match field {
-            Some(_field) => {
-                if arg_split.len() == 2 {
-                    return Some(ParsedArg {
-                        field: _field,
-                        flag: arg_split[0].to_owned(),
-                        data: Some(arg_split[1].to_owned()),
-                    });
-                } else {
-                    return Some(ParsedArg {
-                        field: _field,
-                        flag: arg_split[0].to_owned(),
-                        data: None,
-                    });
-                }
-            }
-            None => None,
-        }
-    }
 }
 
 #[cfg(test)]
@@ -204,11 +100,11 @@ mod config_tests {
     }
 
     #[test]
-    fn mute_beep() {
-        let args = ["-t=Hello".to_owned(), "-b=false".to_owned()];
+    fn beep() {
+        let args = ["/morse".to_owned(),"-t=Hello".to_owned(), "-b".to_owned()];
         let config = Config::build(&args).unwrap();
         let expect_config = ExpectConfig {
-            beep: false,
+            beep: true,
             input_file_path: None,
             language: Alphabet::International,
             output_file_path: None,
@@ -220,10 +116,10 @@ mod config_tests {
 
     #[test]
     fn pass_text_from_file() {
-        let args = ["-i=Hello.txt".to_owned()];
+        let args = ["/morse".to_owned(),"-i=Hello.txt".to_owned()];
         let config = Config::build(&args).unwrap();
         let expect_config = ExpectConfig {
-            beep: true,
+            beep: false,
             input_file_path: Some("Hello.txt".to_owned()),
             language: Alphabet::International,
             output_file_path: None,
@@ -235,10 +131,10 @@ mod config_tests {
 
     #[test]
     fn set_language() {
-        let args = ["--text=Hello".to_owned(), "-l=ua".to_owned()];
+        let args = ["/morse".to_owned(),"--text=Hello".to_owned(), "-l=ua".to_owned()];
         let config = Config::build(&args).unwrap();
         let expect_config = ExpectConfig {
-            beep: true,
+            beep: false,
             input_file_path: None,
             language: Alphabet::Ukrainian,
             output_file_path: None,
@@ -250,12 +146,12 @@ mod config_tests {
 
     #[test]
     fn output_to_file() {
-        let args = ["--text=Hello".to_owned(), "-o=result.txt".to_owned()];
+        let args = ["/morse".to_owned(), "--text=Hello".to_owned(), "-o=result.txt".to_owned()];
         let config = Config::build(&args).unwrap();
         let expect_config = ExpectConfig {
-            beep: true,
+            beep: false,
             input_file_path: None,
-            language: Alphabet::Ukrainian,
+            language: Alphabet::International,
             output_file_path: Some("result.txt".to_owned()),
             text: Some("Hello".to_owned()),
         };
@@ -265,10 +161,10 @@ mod config_tests {
 
     #[test]
     fn pass_only_text() {
-        let args = ["-t=Hello".to_owned()];
+        let args = ["/morse".to_owned(), "-t=Hello".to_owned()];
         let config = Config::build(&args).unwrap();
         let expect_config = ExpectConfig {
-            beep: true,
+            beep: false,
             input_file_path: None,
             language: Alphabet::International,
             output_file_path: None,

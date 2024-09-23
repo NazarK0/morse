@@ -6,6 +6,8 @@ pub use config::*;
 mod utils;
 pub use utils::*;
 
+pub mod argument_parser;
+
 // Usage morse [OPTION] [DATA]
 // Convert text into Morse code
 // Mandatory arguments to long options are mandatory for short options too.
@@ -25,5 +27,6 @@ pub use utils::*;
 // }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    println!("{:?}", config);
     Ok(())
 }
