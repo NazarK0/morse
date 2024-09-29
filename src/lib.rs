@@ -1,8 +1,11 @@
 use std::error::Error;
 
 mod config;
-use argument_parser::{Alphabet, ArgError};
 pub use config::*;
+use argument_parser::Alphabet;
+
+mod morse;
+pub use morse::*;
 
 mod utils;
 pub use utils::*;
@@ -54,10 +57,24 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+
+
 fn txt_to_morse(text: &str, language: Alphabet) -> String {
     let morse_txt: String = "".to_string();
 
     println!("text: {text}, language: {language}");
+
+    let words:Vec<&str> =text.trim().split_ascii_whitespace().collect();
+    let mut morse:Vec<MorseChar> = Vec::new();
+
+    for word in words {
+                for ch in word.chars() {
+                    println!("{}", ch);
+                    morse.push(MorseChar::new(ch, language));
+                }
+                println!("space");
+                morse.push(MorseChar::new_special(SpecialChars::Whitespace, language));
+            }
 
     morse_txt
 }
