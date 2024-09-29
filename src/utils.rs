@@ -1,6 +1,6 @@
 pub fn input_error(message: &str) {
-    println!("morse: {}", message);
-    println!("Try 'morse --help' for more information.");
+    eprintln!("morse: {}", message);
+    eprintln!("Try 'morse --help' for more information.");
 }
 
 pub fn version() {
@@ -15,5 +15,5 @@ There is NO WARRANTY, to the extent permitted by law.
 
 Written by Nazar Vanivskyi\n"
     );
-    print!("{version_msg}");
+    eprint!("{version_msg}");
 }

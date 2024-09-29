@@ -1,11 +1,6 @@
-use crate::argument_parser::{parse_arg, ArgError, ConfigField};
+use crate::argument_parser::{parse_arg, Alphabet, ArgError, ConfigField};
 
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub enum Alphabet {
-    International,
-    Ukrainian,
-    English,
-}
+
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Config {

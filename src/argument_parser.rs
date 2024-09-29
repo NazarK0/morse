@@ -1,9 +1,10 @@
 use std::usize;
 
-use crate::Alphabet;
-
 mod arg_error;
 pub use arg_error::ArgError;
+
+mod alphabet;
+pub use alphabet::Alphabet;
 
 const DELIMETER: char = '=';
 
@@ -33,11 +34,7 @@ pub enum ConfigField {
 }
 
 pub fn parse_arg(arg: &str) -> Result<ParsedArg, ArgError> {
-    println!("arg func: {arg}");
-    // let arg_split: Vec<&str> = arg.split(&DELIMETER).collect();
     let delimeter_idx = arg.find(DELIMETER).unwrap_or_else(|| usize::MAX);
-
-    println!("delim_idx: {delimeter_idx}");
 
     // Process args without data
     if delimeter_idx == usize::MAX {
@@ -65,8 +62,6 @@ pub fn parse_arg(arg: &str) -> Result<ParsedArg, ArgError> {
 
     let (arg, data) = arg.split_at(delimeter_idx);
     let data = data.replacen(DELIMETER, "", 1);
-
-    println!("argument: {arg} data: {}", data.len());
 
     let field = match arg {
         ARG_LANG_S | ARG_LANG_L => {
