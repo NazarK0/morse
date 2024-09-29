@@ -7,6 +7,18 @@ pub use arg_error::ArgError;
 
 const DELIMETER: char = '=';
 
+const ARG_LANG_S: &str = "-l";
+const ARG_LANG_L: &str = "--language";
+const ARG_OUTPUT_S: &str = "-o";
+const ARG_OUTPUT_L: &str = "--output-file";
+const ARG_INPUT_CMD_S: &str = "-t";
+const ARG_INPUT_CMD_L: &str = "--text";
+const ARG_INPUT_FILE_S: &str = "-i";
+const ARG_INPUT_FILE_L: &str = "--input-file";
+const ARG_BEEP_S: &str = "-b";
+const ARG_BEEP_L: &str = "--beep";
+
+
 pub struct ParsedArg {
     pub field: ConfigField,
     pub arg: String,
@@ -32,21 +44,21 @@ pub fn parse_arg(arg: &str) -> Result<ParsedArg, ArgError> {
 
     // Process args without data
     if delimeter_idx == usize::MAX {
-        if arg == "-b" || arg == "--beep" {
+        if arg == ARG_BEEP_S || arg == ARG_BEEP_L {
             return Ok(ParsedArg {
                 field: ConfigField::Beep,
                 arg: arg.to_string(),
             });
         }
 
-        if arg == "-l"
-            || arg == "--language"
-            || arg == "-o"
-            || arg == "--output-file"
-            || arg == "-t"
-            || arg == "--text"
-            || arg == "-i"
-            || arg == "--input-file"
+        if arg == ARG_LANG_S
+            || arg == ARG_LANG_L
+            || arg == ARG_OUTPUT_S
+            || arg == ARG_OUTPUT_L
+            || arg == ARG_INPUT_CMD_S
+            || arg == ARG_INPUT_CMD_L
+            || arg == ARG_INPUT_FILE_S
+            || arg == ARG_INPUT_FILE_L
         {
             return Err(ArgError::MissingInputData(arg.to_string()));
         }
@@ -60,7 +72,7 @@ pub fn parse_arg(arg: &str) -> Result<ParsedArg, ArgError> {
     println!("argument: {arg} data: {}", data.len());
 
     let field = match arg {
-        "-l" | "--language" => {
+        ARG_LANG_S | ARG_LANG_L => {
             let lang = match data.to_ascii_lowercase().as_str() {
                 "int" => Alphabet::International,
                 "en" => Alphabet::English,
@@ -70,10 +82,10 @@ pub fn parse_arg(arg: &str) -> Result<ParsedArg, ArgError> {
 
             ConfigField::Language(lang)
         }
-        "-o" | "--output-file" => ConfigField::OutputFilePath(data.to_string()),
-        "-t" | "--text" => ConfigField::Text(data.to_string()),
-        "-i" | "--input-file" => ConfigField::InputFilePath(data.to_string()),
-        "-b" | "--beep" => ConfigField::Beep,
+        ARG_OUTPUT_S | ARG_OUTPUT_L => ConfigField::OutputFilePath(data.to_string()),
+        ARG_INPUT_CMD_S | ARG_INPUT_CMD_L => ConfigField::Text(data.to_string()),
+        ARG_INPUT_FILE_S | ARG_INPUT_FILE_L => ConfigField::InputFilePath(data.to_string()),
+        ARG_BEEP_S | ARG_BEEP_L => ConfigField::Beep,
         _ => return Err(ArgError::InvalidArg(arg.to_string())),
     };
 
