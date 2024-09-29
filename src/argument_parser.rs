@@ -1,9 +1,11 @@
+use std::usize;
+
 use crate::Alphabet;
 
 mod arg_error;
 pub use arg_error::ArgError;
 
-const DELIMETERS_IN_ARG_FLAG: [char; 2] = ['=', ' '];
+const DELIMETER: char = '=';
 
 pub struct ParsedArg {
     pub field: ConfigField,
@@ -20,47 +22,63 @@ pub enum ConfigField {
 }
 
 pub fn parse_arg(arg: &str) -> Result<ParsedArg, ArgError> {
-    let arg_split: Vec<&str> = arg.split(&DELIMETERS_IN_ARG_FLAG).collect();
-    let arg = arg_split[0].to_owned();
-    println!("{:?}", arg_split);
+    println!("arg func: {arg}");
+    // let arg_split: Vec<&str> = arg.split(&DELIMETER).collect();
+    let delimeter_idx = arg
+        .find(DELIMETER)
+        .unwrap_or_else(|| usize::MAX);
 
-    let field = match arg_split[0] {
+    println!("delim_idx: {delimeter_idx}");
+
+    // Process args without data
+    if delimeter_idx == usize::MAX {
+        if arg == "-b" || arg == "--beep" {
+            return Ok(ParsedArg {
+                field: ConfigField::Beep,
+                arg: arg.to_string(),
+            });
+        }
+
+        if arg == "-l"
+            || arg == "--language"
+            || arg == "-o"
+            || arg == "--output-file"
+            || arg == "-t"
+            || arg == "--text"
+            || arg == "-i"
+            || arg == "--input-file"
+        {
+            return Err(ArgError::MissingInputData(arg.to_string()));
+        }
+
+        return Err(ArgError::InvalidArg(arg.to_string()));
+    }
+
+    let (arg, data) = arg.split_at(delimeter_idx);
+    let data = data.replacen(DELIMETER, "", 1);
+
+    println!("argument: {arg} data: {}", data.len());
+
+    let field = match arg {
         "-l" | "--language" => {
-            if arg_split.len() != 2 {
-                return Err(ArgError::MissingInputData(arg));
-            }
-
-            let lang  = match arg_split[1].to_ascii_lowercase().as_str() {
+            let lang = match data.to_ascii_lowercase().as_str() {
                 "int" => Alphabet::International,
                 "en" => Alphabet::English,
                 "ua" => Alphabet::Ukrainian,
-                other => return Err(ArgError::UnsupportedLanguage(other.to_owned()))
+                other => return Err(ArgError::UnsupportedLanguage(other.to_string())),
             };
 
             ConfigField::Language(lang)
         }
-        "-o" | "--output-file" => {
-            if arg_split.len() != 2 {
-                return Err(ArgError::MissingInputData(arg));
-            }
-            ConfigField::OutputFilePath(arg_split[1].to_owned())
-        }
-        "-t" | "--text" => {
-            if arg_split.len() != 2 {
-                return Err(ArgError::MissingInputData(arg));
-            }
-            ConfigField::Text(arg_split[1].to_owned())
-        }
-        "-i" | "--input-file" => {
-            if arg_split.len() != 2 {
-                return Err(ArgError::MissingInputData(arg.clone()));
-            }
-
-            ConfigField::InputFilePath(arg_split[1].to_owned())
-        }
+        "-o" | "--output-file" => ConfigField::OutputFilePath(data.to_string()),
+        "-t" | "--text" => ConfigField::Text(data.to_string()),
+        "-i" | "--input-file" => ConfigField::InputFilePath(data.to_string()),
         "-b" | "--beep" => ConfigField::Beep,
-        _ => return Err(ArgError::InvalidArg(arg)),
+        _ => return Err(ArgError::InvalidArg(arg.to_string())),
     };
 
-    Ok(ParsedArg { field, arg })
+    Ok(ParsedArg {
+        field,
+        arg: arg.to_string(),
+    })
 }

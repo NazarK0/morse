@@ -38,14 +38,14 @@ impl Config {
                 ConfigField::Beep => beep = true,
                 ConfigField::InputFilePath(path) => {
                     if input_set {
-                        return Err(ArgError::RedundantArg(parsed_arg.arg));
+                        return Err(ArgError::MultipleInputs);
                     }
                     input_set = true;
                     input_file_path = Some(path)
                 }
                 ConfigField::Text(txt) => {
                     if input_set {
-                        return Err(ArgError::RedundantArg(parsed_arg.arg));
+                        return Err(ArgError::MultipleInputs);
                     }
                     input_set = true;
                     text = Some(txt)
@@ -99,9 +99,20 @@ mod config_tests {
         output_file_path: Option<String>,
     }
 
+    fn test_args(config: Config, expect_config: ExpectConfig) {
+        assert_eq!(config.get_beep(), expect_config.beep);
+        assert_eq!(config.get_input_file_path(), expect_config.input_file_path);
+        assert_eq!(config.get_lang(), expect_config.language);
+        assert_eq!(
+            config.get_output_file_path(),
+            expect_config.output_file_path
+        );
+        assert_eq!(config.get_text(), expect_config.text);
+    }
+
     #[test]
     fn beep() {
-        let args = ["/morse".to_owned(),"-t=Hello".to_owned(), "-b".to_owned()];
+        let args = ["/morse".to_owned(), "-t=Hello".to_owned(), "-b".to_owned()];
         let config = Config::build(&args).unwrap();
         let expect_config = ExpectConfig {
             beep: true,
@@ -116,7 +127,7 @@ mod config_tests {
 
     #[test]
     fn pass_text_from_file() {
-        let args = ["/morse".to_owned(),"-i=Hello.txt".to_owned()];
+        let args = ["/morse".to_owned(), "-i=Hello.txt".to_owned()];
         let config = Config::build(&args).unwrap();
         let expect_config = ExpectConfig {
             beep: false,
@@ -131,7 +142,12 @@ mod config_tests {
 
     #[test]
     fn set_language() {
-        let args = ["/morse".to_owned(),"--text=Hello".to_owned(), "-l=ua".to_owned()];
+        // ua
+        let args = [
+            "/morse".to_owned(),
+            "--text=Hello".to_owned(),
+            "-l=ua".to_owned(),
+        ];
         let config = Config::build(&args).unwrap();
         let expect_config = ExpectConfig {
             beep: false,
@@ -142,11 +158,49 @@ mod config_tests {
         };
 
         test_args(config, expect_config);
+
+        // en
+        let args = [
+            "/morse".to_owned(),
+            "--text=Hello".to_owned(),
+            "-l=en".to_owned(),
+        ];
+        let config = Config::build(&args).unwrap();
+        let expect_config = ExpectConfig {
+            beep: false,
+            input_file_path: None,
+            language: Alphabet::English,
+            output_file_path: None,
+            text: Some("Hello".to_owned()),
+        };
+
+        test_args(config, expect_config);
+
+        // int
+        let args = [
+            "/morse".to_owned(),
+            "--text=Hello".to_owned(),
+            "-l=int".to_owned(),
+        ];
+        let config = Config::build(&args).unwrap();
+        let expect_config = ExpectConfig {
+            beep: false,
+            input_file_path: None,
+            language: Alphabet::International,
+            output_file_path: None,
+            text: Some("Hello".to_owned()),
+        };
+
+        test_args(config, expect_config);
     }
 
     #[test]
     fn output_to_file() {
-        let args = ["/morse".to_owned(), "--text=Hello".to_owned(), "-o=result.txt".to_owned()];
+        let args = [
+            "/morse".to_owned(),
+            "--text=Hello".to_owned(),
+            "-o=result.txt".to_owned(),
+        ];
         let config = Config::build(&args).unwrap();
         let expect_config = ExpectConfig {
             beep: false,
@@ -173,15 +227,101 @@ mod config_tests {
 
         test_args(config, expect_config);
     }
+    #[test]
+    fn pass_long_text() {
+        let args = ["/morse".to_owned(), "-t=Hello world".to_owned()];
+        let config = Config::build(&args).unwrap();
+        let expect_config = ExpectConfig {
+            beep: false,
+            input_file_path: None,
+            language: Alphabet::International,
+            output_file_path: None,
+            text: Some("Hello world".to_owned()),
+        };
 
-    fn test_args(config: Config, expect_config: ExpectConfig) {
-        assert_eq!(config.get_beep(), expect_config.beep);
-        assert_eq!(config.get_input_file_path(), expect_config.input_file_path);
-        assert_eq!(config.get_lang(), expect_config.language);
-        assert_eq!(
-            config.get_output_file_path(),
-            expect_config.output_file_path
-        );
-        assert_eq!(config.get_text(), expect_config.text);
+        test_args(config, expect_config);
+    }
+
+    #[test]
+    fn should_panic_no_arguments() {
+        let args = ["/morse".to_owned()];
+        let config = Config::build(&args);
+        let e = config.unwrap_err();
+        assert_eq!(e, ArgError::MissingOperands);
+    }
+
+    #[test]
+    fn should_panic_multiple_inputs() {
+        let args = [
+            "/morse".to_owned(),
+            "-t=Hello".to_owned(),
+            "-i=Hello.txt".to_owned(),
+        ];
+        let config = Config::build(&args);
+        let e = config.unwrap_err();
+        assert_eq!(e, ArgError::MultipleInputs);
+    }
+
+    #[test]
+    fn should_panic_missing_delimeter() {
+        let args = ["/morse".to_owned(), "-t*Hello".to_owned()];
+        let config = Config::build(&args);
+        let e = config.unwrap_err();
+        assert_eq!(e, ArgError::InvalidArg("-t*Hello".to_owned()));
+    }
+
+    #[test]
+    fn should_panic_missing_data() {
+        //text
+        let args = ["/morse".to_owned(), "-t".to_owned()];
+        let config = Config::build(&args);
+        let e = config.unwrap_err();
+        assert_eq!(e, ArgError::MissingInputData("-t".to_owned()));
+
+        let args = ["/morse".to_owned(), "--text".to_owned()];
+        let config = Config::build(&args);
+        let e = config.unwrap_err();
+        assert_eq!(e, ArgError::MissingInputData("--text".to_owned()));
+
+        //input from file
+        let args = ["/morse".to_owned(), "-i".to_owned()];
+        let config = Config::build(&args);
+        let e = config.unwrap_err();
+        assert_eq!(e, ArgError::MissingInputData("-i".to_owned()));
+
+        let args = ["/morse".to_owned(), "--input-file".to_owned()];
+        let config = Config::build(&args);
+        let e = config.unwrap_err();
+        assert_eq!(e, ArgError::MissingInputData("--input-file".to_owned()));
+
+        //language
+        let args = ["/morse".to_owned(), "-t=Hello".to_owned(), "-l".to_owned()];
+        let config = Config::build(&args);
+        let e = config.unwrap_err();
+        assert_eq!(e, ArgError::MissingInputData("-l".to_owned()));
+
+        let args = [
+            "/morse".to_owned(),
+            "-t=Hello".to_owned(),
+            "--language".to_owned(),
+        ];
+        let config = Config::build(&args);
+        let e = config.unwrap_err();
+        assert_eq!(e, ArgError::MissingInputData("--language".to_owned()));
+    }
+
+    #[test]
+    fn should_panic_unsupported_language() {
+        // ru
+        let args = ["/morse".to_owned(), "-l=ru".to_owned()];
+        let config = Config::build(&args);
+        let e = config.unwrap_err();
+        assert_eq!(e, ArgError::UnsupportedLanguage("ru".to_owned()));
+
+        // it
+        let args = ["/morse".to_owned(), "-l=it".to_owned()];
+        let config = Config::build(&args);
+        let e = config.unwrap_err();
+        assert_eq!(e, ArgError::UnsupportedLanguage("it".to_owned()));
     }
 }

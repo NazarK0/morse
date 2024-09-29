@@ -1,25 +1,21 @@
 use std::{error::Error, fmt};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ArgError {
     MissingOperands,
-    MissingDelimeter(String),
     MissingInputData(String),
     InvalidArg(String),
-    RedundantArg(String),
+    MultipleInputs,
     UnsupportedLanguage(String),
 }
 
 impl fmt::Display for ArgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ArgError::MissingDelimeter(arg) => {
-                write!(f, "Missing delimeter in '{arg}' arg")
-            }
             ArgError::MissingOperands => write!(f, "Missing operands"),
             ArgError::MissingInputData(arg) => write!(f, "Missing input data in {arg} arg"),
             ArgError::InvalidArg(arg) => write!(f, "Invalid argument {arg}"),
-            ArgError::RedundantArg(arg) => write!(f, "Redundant argument {arg}"),
+            ArgError::MultipleInputs => write!(f, "Multiple inputs "),
             ArgError::UnsupportedLanguage(lang) => write!(f, "Unsupported language {lang}"),
         }
     }
