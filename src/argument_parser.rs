@@ -18,7 +18,6 @@ const ARG_INPUT_FILE_L: &str = "--input-file";
 const ARG_BEEP_S: &str = "-b";
 const ARG_BEEP_L: &str = "--beep";
 
-
 pub struct ParsedArg {
     pub field: ConfigField,
     pub arg: String,
@@ -36,9 +35,7 @@ pub enum ConfigField {
 pub fn parse_arg(arg: &str) -> Result<ParsedArg, ArgError> {
     println!("arg func: {arg}");
     // let arg_split: Vec<&str> = arg.split(&DELIMETER).collect();
-    let delimeter_idx = arg
-        .find(DELIMETER)
-        .unwrap_or_else(|| usize::MAX);
+    let delimeter_idx = arg.find(DELIMETER).unwrap_or_else(|| usize::MAX);
 
     println!("delim_idx: {delimeter_idx}");
 

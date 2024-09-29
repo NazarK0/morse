@@ -1,6 +1,7 @@
 use std::error::Error;
 
 mod config;
+use argument_parser::ArgError;
 pub use config::*;
 
 mod utils;
@@ -28,5 +29,37 @@ pub mod argument_parser;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     println!("{:?}", config);
+
+    let morse_txt = match config.get_text() {
+        Some(text) => txt_to_morse(&text, config.get_lang()),
+        None => {
+            match config.get_input_file_path() {
+                Some(path) => {
+
+                    let text = "";
+                    txt_to_morse(text, config.get_lang())
+                },
+                None => {
+                    panic!("No input text to convert")
+                }
+            }
+        },
+    };
+
+    if config.get_beep() {
+        morse_txt_to_beep(&morse_txt);
+    }
+
+
     Ok(())
+}
+
+fn txt_to_morse(text: &str, language: Alphabet) -> String {
+    let morse_txt: String = "".to_string();
+
+    morse_txt
+}
+
+fn morse_txt_to_beep(text: &str) {
+
 }
