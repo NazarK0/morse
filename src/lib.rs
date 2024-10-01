@@ -32,12 +32,14 @@ pub mod argument_parser;
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     println!("{:?}", config);
 
+    let display_units_as = DisplayAlias::new(Some('🔥'), Some('➖'), Some('🚧'));
+
     let morse = match config.get_text() {
-        Some(text) => Morse::from_str(&text, config.get_lang()),
+        Some(text) => Morse::from_str(&text, config.get_lang(), Some(display_units_as)),
         None => match config.get_input_file_path() {
             Some(path) => {
                 let text = "From file";
-                Morse::from_str(text, config.get_lang())
+                Morse::from_str(text, config.get_lang(), Some(display_units_as))
             }
             None => {
                 panic!("No input text to convert")
