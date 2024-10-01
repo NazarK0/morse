@@ -2,7 +2,6 @@ use std::error::Error;
 
 mod config;
 pub use config::*;
-use argument_parser::Alphabet;
 
 mod morse;
 pub use morse::*;
@@ -33,52 +32,24 @@ pub mod argument_parser;
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     println!("{:?}", config);
 
-    let morse_txt = match config.get_text() {
-        Some(text) => txt_to_morse(&text, config.get_lang()),
-        None => {
-            match config.get_input_file_path() {
-                Some(path) => {
-
-                    let text = "";
-                    txt_to_morse(text, config.get_lang())
-                },
-                None => {
-                    panic!("No input text to convert")
-                }
+    let morse = match config.get_text() {
+        Some(text) => Morse::from_str(&text, config.get_lang()),
+        None => match config.get_input_file_path() {
+            Some(path) => {
+                let text = "From file";
+                Morse::from_str(text, config.get_lang())
+            }
+            None => {
+                panic!("No input text to convert")
             }
         },
     };
 
+    println!("{}", morse.to_string());
+
     if config.get_beep() {
-        morse_txt_to_beep(&morse_txt);
+        morse.to_beep();
     }
 
-
     Ok(())
-}
-
-
-
-fn txt_to_morse(text: &str, language: Alphabet) -> String {
-    let morse_txt: String = "".to_string();
-
-    println!("text: {text}, language: {language}");
-
-    let words:Vec<&str> =text.trim().split_ascii_whitespace().collect();
-    let mut morse:Vec<MorseChar> = Vec::new();
-
-    for word in words {
-                for ch in word.chars() {
-                    println!("{}", ch);
-                    morse.push(MorseChar::new(ch, language));
-                }
-                println!("space");
-                morse.push(MorseChar::new_special(SpecialChars::Whitespace, language));
-            }
-
-    morse_txt
-}
-
-fn morse_txt_to_beep(text: &str) {
-
 }

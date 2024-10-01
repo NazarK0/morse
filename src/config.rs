@@ -1,7 +1,5 @@
 use crate::argument_parser::{parse_arg, Alphabet, ArgError, ConfigField};
 
-
-
 #[derive(Debug, PartialEq, Clone)]
 pub struct Config {
     language: Alphabet,
