@@ -13,7 +13,7 @@ impl ToString for MorseUnit {
         match self {
             MorseUnit::Dot => "․".to_string(),
             MorseUnit::Line => "⚊".to_string(),
-            MorseUnit::EOW => "       ".to_string(), //(End Of Word) The space between words is seven units
+            MorseUnit::EOW => "       ".to_string(), // The space between words is seven units
         }
     }
 }

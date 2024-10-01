@@ -37,12 +37,11 @@ impl Morse {
         let mut string = String::new();
         for (idx, m_char) in self.morse.iter().enumerate() {
             string.push_str(&m_char.to_string());
-            
+
             // The space between letters is three units
             if idx < self.morse.len() - 1 {
                 string.push_str("   ");
             }
-            
         }
 
         string
