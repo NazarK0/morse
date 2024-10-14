@@ -52,6 +52,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     // morse.whitespace_as("🚧");
 
     println!("{}", morse.to_string());
+    println!("{}", morse.to_bin_str());
 
     if config.get_beep() {
         morse.to_beep();

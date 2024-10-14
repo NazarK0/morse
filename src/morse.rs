@@ -67,8 +67,19 @@ impl Morse {
         self.display_as.whitespace = alias.to_string();
     }
 
-    pub fn to_bin_str(&self) -> &str {
-        ""
+    pub fn to_bin_str(&self) -> String {
+        let mut string = String::new();
+
+        for (idx, m_char) in self.morse.iter().enumerate() {
+            string.push_str(&m_char.to_bin_str());
+
+            // The space between letters is three units
+            if idx < self.morse.len() - 1 {
+                string.push_str("000");
+            }
+        }
+
+        string
     }
 }
 
@@ -76,6 +87,7 @@ impl ToString for Morse {
     fn to_string(&self) -> String {
         let mut string = String::new();
         let morse = RefCell::new(self.morse.clone());
+
         for (idx, m_char) in morse.borrow_mut().iter_mut().enumerate() {
             m_char.dot_as(&self.display_as.dot);
             m_char.line_as(&self.display_as.line);

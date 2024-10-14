@@ -40,6 +40,25 @@ impl MorseChar {
         self.alpha_char
     }
 
+    pub fn to_bin_str(&self) -> String {
+        let mut string = String::new();
+        for (idx, m_unit) in self.m_char.iter().enumerate() {
+            match m_unit {
+                MorseUnit::Dot => string.push_str("1"),
+                MorseUnit::Line => string.push_str("111"),
+                MorseUnit::Whitespace => string.push_str("0"),
+            }
+
+
+            // The space between parts of the same letter is one unit
+            if idx < self.m_char.len() - 1 {
+                string.push('0');
+            }
+        }
+
+        string
+    }
+
     pub fn get_language(&self) -> Alphabet {
         self.language
     }
@@ -67,9 +86,9 @@ impl ToString for MorseChar {
                 MorseUnit::Whitespace => string.push_str(&self.display_as.whitespace),
             }
 
-            println!("dot len:{}", self.display_as.dot.len());
-            println!("line len:{}", self.display_as.line.len());
-            println!("whitespace len:{}", self.display_as.whitespace.len());
+            // println!("dot len:{}", self.display_as.dot.len());
+            // println!("line len:{}", self.display_as.line.len());
+            // println!("whitespace len:{}", self.display_as.whitespace.len());
 
             // The space between parts of the same letter is one unit
             if idx < self.m_char.len() - 1 {
