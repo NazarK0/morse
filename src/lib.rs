@@ -23,29 +23,33 @@ pub mod argument_parser;
 // --help           display this help and exit
 // --version        output version information and exit
 
-// fn main() {
-//     let args: Vec<String> = env::args().collect();
-
-//     parse_cmd_args(args);
-// }
-
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     println!("{:?}", config);
 
-    let display_units_as = DisplayAlias::new(Some('🔥'), Some('➖'), Some('🚧'));
-
-    let morse = match config.get_text() {
-        Some(text) => Morse::from_str(&text, config.get_lang(), Some(display_units_as)),
+    let mut morse = match config.get_text() {
+        Some(text) => Morse::from_str(&text, config.get_lang()),
         None => match config.get_input_file_path() {
             Some(path) => {
                 let text = "From file";
-                Morse::from_str(text, config.get_lang(), Some(display_units_as))
+                Morse::from_str(text, config.get_lang())
             }
             None => {
                 panic!("No input text to convert")
             }
         },
     };
+
+    // morse.dot_as("🔥");
+    // morse.line_as("➖");
+    // morse.whitespace_as("🚧");
+
+    // morse.dot_as("ABA");
+    // morse.line_as("GEGo");
+    // morse.whitespace_as("STOP");
+    
+    // morse.dot_as("☢️");
+    // morse.line_as("🐛");
+    // morse.whitespace_as("🚧");
 
     println!("{}", morse.to_string());
 

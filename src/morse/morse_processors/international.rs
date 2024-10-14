@@ -1,5 +1,5 @@
 use crate::MorseUnit;
-use crate::MorseUnit::{Dot, Line, EOW};
+use crate::MorseUnit::{Dot, Line, Whitespace};
 
 pub fn convert_from_int(ch: char) -> Vec<MorseUnit> {
     match ch {
@@ -39,7 +39,7 @@ pub fn convert_from_int(ch: char) -> Vec<MorseUnit> {
         '8' => vec![Line, Line, Line, Dot, Dot],
         '9' => vec![Line, Line, Line, Line, Dot],
         '0' => vec![Line, Line, Line, Line, Line],
-        ' ' => vec![EOW],
+        ' ' => vec![Whitespace],
         _ => {
             panic!("")
         }
