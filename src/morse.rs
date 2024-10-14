@@ -1,5 +1,5 @@
 mod morse_char;
-use std::cell::RefCell;
+use std::{cell::RefCell, thread, time};
 
 pub use morse_char::*;
 
@@ -16,6 +16,7 @@ pub struct Morse {
     morse: Vec<MorseChar>,
     language: Alphabet,
     display_as: DisplayChars,
+    sound: Sound,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -23,6 +24,11 @@ pub struct DisplayChars {
     pub dot: String,
     pub line: String,
     pub whitespace: String,
+}
+#[derive(Debug, PartialEq, Clone)]
+pub struct Sound {
+    pub frequency: f32,
+    pub speed: f32,
 }
 
 impl Morse {
@@ -42,12 +48,25 @@ impl Morse {
                 line: '⚊'.to_string(),
                 whitespace: ' '.to_string(),
             },
+            sound: Sound {
+                frequency: 450.0,
+                speed: 1.0
+            }
         }
     }
 
     pub fn to_beep(&self) {
-        for m_char in &self.morse {
+        let morse = RefCell::new(self.morse.clone());
+        for (idx, m_char) in morse.borrow_mut().iter_mut().enumerate() {
+            m_char.frequency(self.sound.frequency);
+            m_char.play_speed(self.sound.speed);
+
             m_char.to_beep();
+
+            // The space between letters is three units
+            if idx < self.morse.len() - 1 {
+                thread::sleep(time::Duration::from_secs(3));
+            }
         }
     }
 
@@ -66,6 +85,14 @@ impl Morse {
     pub fn whitespace_as(&mut self, alias: &str) {
         self.display_as.whitespace = alias.to_string();
     }
+
+    pub fn frequency(&mut self, frequency: f32) {
+        self.sound.frequency = frequency;
+    }
+    pub fn play_speed(&mut self, speed: f32) {
+        self.sound.speed = speed;
+    }
+
 
     pub fn to_bin_str(&self) -> String {
         let mut string = String::new();
