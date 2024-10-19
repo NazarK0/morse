@@ -44,3 +44,7 @@ pub fn convert_from_en(ch: char) -> Vec<MorseUnit> {
         }
     }
 }
+
+pub fn convert_from_en_bin(letter: &str) -> Vec<MorseUnit> {
+    vec![Dot]
+}

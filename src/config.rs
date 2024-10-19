@@ -58,7 +58,7 @@ impl Config {
 
     // getters
     pub fn get_lang(&self) -> Alphabet {
-        self.language
+        self.language.clone()
     }
 
     pub fn get_beep(&self) -> bool {

@@ -44,3 +44,8 @@ pub fn convert_from_ua(ch: char) -> Vec<MorseUnit> {
         }
     }
 }
+
+
+pub fn convert_from_ua_bin(letter: &str) -> Vec<MorseUnit> {
+    vec![Dot]
+}

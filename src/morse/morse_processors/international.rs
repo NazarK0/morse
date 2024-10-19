@@ -1,8 +1,8 @@
 use crate::MorseUnit;
 use crate::MorseUnit::{Dot, Line, Whitespace};
 
-pub fn convert_from_int(ch: char) -> Vec<MorseUnit> {
-    match ch {
+pub fn convert_from_int(letter: char) -> Vec<MorseUnit> {
+    match letter {
         'a' => vec![Dot, Line],
         'b' => vec![Line, Dot, Dot, Dot],
         'c' => vec![Line, Dot, Line, Dot],
@@ -44,4 +44,18 @@ pub fn convert_from_int(ch: char) -> Vec<MorseUnit> {
             panic!("")
         }
     }
+}
+
+pub fn convert_from_int_bin(letter: &str) -> Vec<MorseUnit> {
+    let parts :Vec<&str> = letter.split('0').collect();
+    let mut morse_letter = Vec::new();
+    for unit in parts {
+        match unit {
+            "111" => morse_letter.push(Line),
+            "1" => morse_letter.push(Dot),
+            _ => panic!("Wrond binary, cant parse")
+        }
+    }
+
+    morse_letter
 }

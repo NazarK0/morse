@@ -27,11 +27,11 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     println!("{:?}", config);
 
     let mut morse = match config.get_text() {
-        Some(text) => Morse::from_str(&text, config.get_lang()),
+        Some(text) => Morse::from_str(&text, &config.get_lang()),
         None => match config.get_input_file_path() {
             Some(path) => {
                 let text = "From file";
-                Morse::from_str(text, config.get_lang())
+                Morse::from_str(text, &config.get_lang())
             }
             None => {
                 panic!("No input text to convert")
@@ -52,11 +52,11 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     // morse.whitespace_as("🚧");
 
     println!("{}", morse.to_string());
-    // println!("{}", morse.to_bin_str());
+    println!("{}", morse.to_bin_str());
 
-    morse.frequency(300.0);
-    morse.play_speed(4.0);
-    morse.to_beep();
+    morse.frequency(500.0);
+    morse.play_speed(5.0);
+    // morse.to_beep();
 
     if config.get_beep() {
         morse.to_beep();
