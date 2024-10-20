@@ -4,13 +4,14 @@ mod config;
 use argument_parser::Alphabet;
 pub use config::*;
 
-mod morse;
-pub use morse::*;
 
 mod utils;
 pub use utils::*;
 
 pub mod argument_parser;
+
+use morse_lib::Morse;
+
 
 // Usage morse [OPTION] [DATA]
 // Convert text into Morse code
@@ -23,6 +24,8 @@ pub mod argument_parser;
 //
 // --help           display this help and exit
 // --version        output version information and exit
+
+
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     println!("{:?}", config);
