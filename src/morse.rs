@@ -9,52 +9,63 @@ pub use morse_unit::MorseUnit;
 mod morse_processors;
 pub use morse_processors::*;
 
-use crate::argument_parser::Alphabet;
+mod display_chars;
+pub use display_chars::DisplayChars;
+
+mod sound;
+pub use sound::Sound;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Morse {
     morse: Vec<MorseChar>,
-    language: Alphabet,
+    language: String,
     display_as: DisplayChars,
     sound: Sound,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct DisplayChars {
-    pub dot: String,
-    pub line: String,
-    pub whitespace: String,
-}
-#[derive(Debug, PartialEq, Clone)]
-pub struct Sound {
-    pub frequency: f32,
-    pub speed: f32,
+    from_char_converter: fn(char) -> Vec<MorseUnit>,
+    into_char_converter: fn(Vec<MorseUnit>) -> char,
 }
 
 impl Morse {
-    pub fn from_str(text: &str, language: &Alphabet) -> Morse {
+    pub fn new(
+        language: String,
+        from_char: fn(char) -> Vec<MorseUnit>,
+        into_char: fn(Vec<MorseUnit>) -> char,
+    ) -> Morse {
+        Morse {
+            morse: Vec::new(),
+            language,
+            display_as: DisplayChars::default(),
+            sound: Sound::default(),
+            from_char_converter: from_char,
+            into_char_converter: into_char,
+        }
+    }
+    pub fn from_str(text: &str) -> Morse {
         let mut morse: Vec<MorseChar> = Vec::new();
 
         for letter in text.chars() {
-            morse.push(MorseChar::from_char(letter, &language));
+            morse.push(MorseChar::from_char(letter, "International", from_int_char));
         }
 
         Morse {
             morse,
-            language: language.clone(),
-            display_as: DisplayChars {
-                dot: '.'.to_string(),
-                line: '⚊'.to_string(),
-                whitespace: ' '.to_string(),
-            },
-            sound: Sound {
-                frequency: 450.0,
-                speed: 1.0,
-            },
+            ..Morse::default()
         }
     }
 
-    pub fn from_bin(bin: &str, language: &Alphabet) -> Morse {
+    pub fn parse_text(&mut self, text: &str) {
+        let mut morse: Vec<MorseChar> = Vec::new();
+
+        for letter in text.chars() {
+            morse.push(MorseChar::from_char(
+                letter,
+                &self.language,
+                self.from_char_converter,
+            ));
+        }
+    }
+
+    pub fn from_bin(bin: &str) -> Morse {
         let words: Vec<&str> = bin.split("0000000").collect();
         let mut morse: Vec<MorseChar> = Vec::new();
 
@@ -62,22 +73,29 @@ impl Morse {
             let letters: Vec<&str> = word.split("000").collect();
 
             for letter in letters {
-                morse.push(MorseChar::from_bin(letter, &language));
+                morse.push(MorseChar::from_bin(letter, "International", into_int_char));
             }
         }
 
         Morse {
             morse,
-            language: language.clone(),
-            display_as: DisplayChars {
-                dot: '.'.to_string(),
-                line: '⚊'.to_string(),
-                whitespace: ' '.to_string(),
-            },
-            sound: Sound {
-                frequency: 450.0,
-                speed: 1.0,
-            },
+            ..Morse::default()
+        }
+    }
+
+    pub fn parse_bin(&mut self, bin: &str) {
+        let words: Vec<&str> = bin.split("0000000").collect();
+
+        for word in words {
+            let letters: Vec<&str> = word.split("000").collect();
+
+            for letter in letters {
+                self.morse.push(MorseChar::from_bin(
+                    letter,
+                    &self.language,
+                    self.into_char_converter,
+                ));
+            }
         }
     }
 
@@ -96,7 +114,7 @@ impl Morse {
         }
     }
 
-    pub fn get_language(&self) -> Alphabet {
+    pub fn get_language(&self) -> String {
         self.language.clone()
     }
 
@@ -135,6 +153,19 @@ impl Morse {
     }
 }
 
+impl Default for Morse {
+    fn default() -> Self {
+        Self {
+            morse: Vec::new(),
+            language: "International".to_string(),
+            display_as: DisplayChars::default(),
+            sound: Sound::default(),
+            from_char_converter: from_int_char,
+            into_char_converter: into_int_char,
+        }
+    }
+}
+
 impl ToString for Morse {
     fn to_string(&self) -> String {
         let mut string = String::new();
@@ -163,7 +194,7 @@ mod morse_tests {
     #[test]
     fn create_from_text_str() {
         assert_eq!(
-            Morse::from_str("Hello", &Alphabet::International).to_bin_str(),
+            Morse::from_str("Hello").to_bin_str(),
             "1010101000100010111010100010111010100011101110111"
         );
     }
@@ -171,28 +202,25 @@ mod morse_tests {
     #[test]
     fn create_from_binary_str() {
         const HELLO_BIN: &str = "1010101000100010111010100010111010100011101110111";
-        assert_eq!(
-            Morse::from_bin(HELLO_BIN, &Alphabet::International).to_bin_str(),
-            HELLO_BIN
-        );
+        assert_eq!(Morse::from_bin(HELLO_BIN).to_bin_str(), HELLO_BIN);
     }
 
     #[test]
     fn get_language() {
         assert_eq!(
-            Morse::from_str("hello", &Alphabet::International).get_language(),
-            Alphabet::International
+            Morse::from_str("hello").get_language(),
+            "International".to_string()
         );
         assert_eq!(
-            Morse::from_bin("1", &Alphabet::International).get_language(),
-            Alphabet::International
+            Morse::from_bin("1").get_language(),
+            "International".to_string()
         );
     }
 
     #[test]
     fn to_string() {
         assert_eq!(
-            Morse::from_str("hi u", &Alphabet::International).to_string(),
+            Morse::from_str("hi u").to_string(),
             ". . . .   . .       . . ⚊"
         );
     }
@@ -200,21 +228,18 @@ mod morse_tests {
     #[test]
     fn to_bin_str() {
         assert_eq!(
-            Morse::from_str("hi u", &Alphabet::International).to_bin_str(),
+            Morse::from_str("hi u").to_bin_str(),
             "101010100010100000001010111"
         );
     }
     #[test]
     fn set_aliases_for_whitespace_lines_and_dots() {
-        let mut morse = Morse::from_str("hi u", &Alphabet::International);
+        let mut morse = Morse::from_str("hi u");
 
         morse.dot_as("🔥");
         morse.line_as("➖");
         morse.whitespace_as("🚧");
 
-        assert_eq!(
-            morse.to_string(),
-            "🔥 🔥 🔥 🔥   🔥 🔥   🚧   🔥 🔥 ➖"
-        );
+        assert_eq!(morse.to_string(), "🔥 🔥 🔥 🔥   🔥 🔥   🚧   🔥 🔥 ➖");
     }
 }

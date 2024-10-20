@@ -5,7 +5,7 @@ pub enum Alphabet {
     International,
     Ukrainian,
     English,
-    Custom(String)
+    Custom(String),
 }
 
 impl fmt::Display for Alphabet {

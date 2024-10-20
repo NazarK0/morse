@@ -1,6 +1,7 @@
 use std::error::Error;
 
 mod config;
+use argument_parser::Alphabet;
 pub use config::*;
 
 mod morse;
@@ -27,11 +28,21 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     println!("{:?}", config);
 
     let mut morse = match config.get_text() {
-        Some(text) => Morse::from_str(&text, &config.get_lang()),
+        Some(text) => {
+            if config.get_lang() == Alphabet::International {
+                Morse::from_str(&text)
+            } else {
+                // let mut  morse = Morse::new("config_path");
+                // morse.parse_text(&text);
+
+                // morse
+                panic!("Unsupported language")
+            }
+        }
         None => match config.get_input_file_path() {
             Some(path) => {
                 let text = "From file";
-                Morse::from_str(text, &config.get_lang())
+                Morse::from_str(text)
             }
             None => {
                 panic!("No input text to convert")
@@ -46,7 +57,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     // morse.dot_as("ABA");
     // morse.line_as("GEGo");
     // morse.whitespace_as("STOP");
-    
+
     // morse.dot_as("☢️");
     // morse.line_as("🐛");
     // morse.whitespace_as("🚧");

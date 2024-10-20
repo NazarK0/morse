@@ -5,18 +5,14 @@ use std::{
 
 use rodio::{source::SineWave, OutputStream, Sink, Source};
 
-use crate::argument_parser::Alphabet;
-
 // use super::MorseUnit::Whitespace;
-use super::{convert_bin, convert_char, DisplayChars, MorseUnit, Sound};
-
-
+use super::{convert_from_bin, DisplayChars, MorseUnit, Sound};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct MorseChar {
     m_char: Vec<MorseUnit>,
     alpha_char: char,
-    language: Alphabet,
+    language: String,
     display_as: DisplayChars,
     sound: Sound,
 }
@@ -26,43 +22,45 @@ pub enum SpecialChars {
 }
 
 impl MorseChar {
-    pub fn from_char(letter: char, language: &Alphabet) -> MorseChar {
-        let m_char: Vec<MorseUnit> = convert_char(&language, letter);
+    pub fn new(units: Vec<MorseUnit>, letter: char, language: &str) -> MorseChar {
+        MorseChar {
+            m_char: units,
+            alpha_char: letter,
+            language: language.to_string(),
+            display_as: DisplayChars::default(),
+            sound: Sound::default(),
+        }
+    }
+
+    pub fn from_char(
+        letter: char,
+        language: &str,
+        converter: fn(char) -> Vec<MorseUnit>,
+    ) -> MorseChar {
+        let m_char: Vec<MorseUnit> = converter(letter);
 
         MorseChar {
             m_char,
             alpha_char: letter,
-            language: language.clone(),
-            // default values that never use
-            display_as: DisplayChars {
-                dot: '.'.to_string(),
-                line: '⚊'.to_string(),
-                whitespace: ' '.to_string(),
-            },
-            sound: Sound {
-                frequency: 450.0,
-                speed: 1.0
-            }
+            language: language.to_string(),
+            display_as: DisplayChars::default(),
+            sound: Sound::default(),
         }
     }
 
-    pub fn from_bin(letter: &str, language: &Alphabet) -> MorseChar {
-        let m_char: Vec<MorseUnit> = convert_bin(language, letter);
+    pub fn from_bin(
+        letter: &str,
+        language: &str,
+        into_char: fn(Vec<MorseUnit>) -> char,
+    ) -> MorseChar {
+        let m_char: Vec<MorseUnit> = convert_from_bin(letter);
 
         MorseChar {
-            m_char,
-            alpha_char: 'E',
-            language: language.clone(),
-            // default values that never use
-            display_as: DisplayChars {
-                dot: '.'.to_string(),
-                line: '⚊'.to_string(),
-                whitespace: ' '.to_string(),
-            },
-            sound: Sound {
-                frequency: 450.0,
-                speed: 1.0
-            }
+            m_char: m_char.clone(),
+            alpha_char: into_char(m_char),
+            language: language.to_string(),
+            display_as: DisplayChars::default(),
+            sound: Sound ::default(),
         }
     }
 
@@ -109,7 +107,7 @@ impl MorseChar {
         string
     }
 
-    pub fn get_language(&self) -> Alphabet {
+    pub fn get_language(&self) -> String {
         self.language.clone()
     }
 
@@ -157,33 +155,33 @@ impl ToString for MorseChar {
     }
 }
 
+fn play_sound(freq: f32, duration: u8, speed: f32) {
+    // on linux require pkg-config libudev-dev libasound2-dev
+    // _stream must live as long as the sink
+    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    let sink = Sink::try_new(&stream_handle).unwrap();
 
-fn play_sound( freq: f32, duration: u8, speed: f32) {
-        // on linux require pkg-config libudev-dev libasound2-dev
-        // _stream must live as long as the sink
-        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-        let sink = Sink::try_new(&stream_handle).unwrap();
+    // Add a dummy source of the sake of the example.
+    let source = SineWave::new(freq)
+        .take_duration(Duration::from_secs_f32((duration as f32) / speed))
+        .amplify(0.20);
+    sink.append(source);
 
-        // Add a dummy source of the sake of the example.
-        let source = SineWave::new(freq)
-            .take_duration(Duration::from_secs_f32((duration as f32) / speed))
-            .amplify(0.20);
-        sink.append(source);
+    // The sound plays in a separate thread. This call will block the current thread until the sink
+    // has finished playing all its queued sounds.
+    sink.sleep_until_end();
+}
 
-        // The sound plays in a separate thread. This call will block the current thread until the sink
-        // has finished playing all its queued sounds.
-        sink.sleep_until_end();
-
-    }
-
-    #[cfg(test)]
+#[cfg(test)]
 mod morse_char_tests {
+    use crate::{from_int_char, into_int_char};
+
     use super::*;
 
     #[test]
     fn create_from_text_str() {
         assert_eq!(
-            MorseChar::from_char('H', &Alphabet::International).to_bin_str(),
+            MorseChar::from_char('H', "International", from_int_char).to_bin_str(),
             "1010101"
         );
     }
@@ -192,7 +190,7 @@ mod morse_char_tests {
     fn create_from_binary_str() {
         const H_BIN: &str = "1010101";
         assert_eq!(
-            MorseChar::from_bin(H_BIN, &Alphabet::International).to_bin_str(),
+            MorseChar::from_bin(H_BIN, "International", into_int_char).to_bin_str(),
             H_BIN
         );
     }
@@ -200,19 +198,19 @@ mod morse_char_tests {
     #[test]
     fn get_language() {
         assert_eq!(
-            MorseChar::from_char('R', &Alphabet::International).get_language(),
-            Alphabet::International
+            MorseChar::from_char('R', "International", from_int_char).get_language(),
+            "International"
         );
         assert_eq!(
-            MorseChar::from_bin("1", &Alphabet::International).get_language(),
-            Alphabet::International
+            MorseChar::from_bin("1", "International", into_int_char).get_language(),
+            "International"
         );
     }
 
     #[test]
     fn to_string() {
         assert_eq!(
-            MorseChar::from_char('u', &Alphabet::International).to_string(),
+            MorseChar::from_char('u', "International", from_int_char).to_string(),
             ". . ⚊"
         );
     }
@@ -220,30 +218,23 @@ mod morse_char_tests {
     #[test]
     fn to_bin_str() {
         assert_eq!(
-            MorseChar::from_char('u', &Alphabet::International).to_bin_str(),
+            MorseChar::from_char('u', "International", from_int_char).to_bin_str(),
             "1010111"
         );
     }
     #[test]
     fn set_aliases_for_whitespace_lines_and_dots() {
-        let mut morse = MorseChar::from_char('u', &Alphabet::International);
+        let mut morse = MorseChar::from_char('u', "International", from_int_char);
 
         morse.dot_as("🔥");
         morse.line_as("➖");
 
-        assert_eq!(
-            morse.to_string(),
-            "🔥 🔥 ➖"
-        );
+        assert_eq!(morse.to_string(), "🔥 🔥 ➖");
 
-        let mut morse = MorseChar::from_char(' ', &Alphabet::International);
+        let mut morse = MorseChar::from_char(' ', "International", from_int_char);
 
         morse.whitespace_as("🚧");
 
-        assert_eq!(
-            morse.to_string(),
-            "🚧"
-        );
-        
+        assert_eq!(morse.to_string(), "🚧");
     }
 }
