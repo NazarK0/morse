@@ -67,8 +67,8 @@ pub fn parse_arg(arg: &str) -> Result<ParsedArg, ArgError> {
         ARG_LANG_S | ARG_LANG_L => {
             let lang = match data.to_ascii_lowercase().as_str() {
                 "int" => Alphabet::International,
-                "en" => Alphabet::English,
-                "ua" => Alphabet::Ukrainian,
+                "en" => Alphabet::Custom("English".to_string()),
+                "ua" => Alphabet::Custom("Ukrainian".to_string()),
                 other => return Err(ArgError::UnsupportedLanguage(other.to_string())),
             };
 

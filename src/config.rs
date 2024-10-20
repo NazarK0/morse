@@ -145,7 +145,7 @@ mod config_tests {
         let expect_config = ExpectConfig {
             beep: false,
             input_file_path: None,
-            language: Alphabet::Ukrainian,
+            language: Alphabet::Custom("Ukrainian".to_string()),
             output_file_path: None,
             text: Some("Hello".to_owned()),
         };
@@ -162,7 +162,7 @@ mod config_tests {
         let expect_config = ExpectConfig {
             beep: false,
             input_file_path: None,
-            language: Alphabet::English,
+            language: Alphabet::Custom("English".to_string()),
             output_file_path: None,
             text: Some("Hello".to_owned()),
         };
